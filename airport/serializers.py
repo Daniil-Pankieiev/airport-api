@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from .models import Airport, Route, Crew, Ticket, Order, Airplane, AirplaneType, Flight
 
@@ -55,18 +56,6 @@ class CrewSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class TicketSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ticket
-        fields = "__all__"
-
-
-class OrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        fields = "__all__"
-
-
 class AirplaneTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirplaneType
@@ -119,3 +108,57 @@ class FlightDetailSerializer(FlightSerializer):
     class Meta:
         model = Flight
         fields = ("route", "departure_time", "arrival_time", "airplane", "crew")
+
+
+class TicketSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        Ticket.validate_seat(
+            attrs["row"],
+            attrs["seat"],
+            attrs["flight"],
+            serializers.ValidationError,
+        )
+
+        return data
+
+    class Meta:
+        model = Ticket
+        fields = ("row", "seat", "flight")
+
+
+class TicketListSerializer(TicketSerializer):
+    flight = FlightListSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = ("id", "row", "seat", "flight")
+
+
+class TakenPlacesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ("row", "seat")
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    tickets = TicketSerializer(many=True, allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ("id", "tickets", "created_at")
+
+    @transaction.atomic
+    def create(self, validated_data):
+        tickets_data = validated_data.pop("tickets", [])
+        order = Order.objects.create(**validated_data)
+        tickets = [Ticket(order=order, **ticket_data) for ticket_data in tickets_data]
+        Ticket.objects.bulk_create(tickets)
+        return order
+
+
+class OrderListSerializer(OrderSerializer):
+    tickets = TicketListSerializer(
+        many=True,
+        read_only=False,
+    )
