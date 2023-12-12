@@ -14,7 +14,7 @@ create .env file, inside define variables from .env.sample
 python manage.py migrate
 python manage.py runserver
 
-you can use command python manage.py loaddata data_base_data.json to fill db 
+you can use command python manage.py loaddata db_airport_data.json to fill db 
 
 
 # Getting access
