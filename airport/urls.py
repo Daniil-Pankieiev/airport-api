@@ -11,17 +11,17 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"airports", AirportViewSet)
-router.register(r"routes", RouteViewSet)
-router.register(r"crews", CrewViewSet)
-router.register(r"orders", OrderViewSet)
-router.register(r"airplane-types", AirplaneTypeViewSet)
-router.register(r"airplanes", AirplaneViewSet)
-router.register(r"flights", FlightViewSet)
+router.register("airports", AirportViewSet)
+router.register("routes", RouteViewSet)
+router.register("crews", CrewViewSet)
+router.register("orders", OrderViewSet)
+router.register("airplane-types", AirplaneTypeViewSet)
+router.register("airplanes", AirplaneViewSet)
+router.register("flights", FlightViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
 ]
 
 
-app_name = "cinema"
+app_name = "airport"

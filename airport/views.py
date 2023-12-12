@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -5,7 +6,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from .models import Airport, Route, Crew, Order, Airplane, AirplaneType, Flight
+from .models import Airport, Route, Crew, Order, Airplane, AirplaneType, Flight, Ticket
 from .permissions import IsAdminOrIfAuthenticatedReadOnly
 from .serializers import (
     AirportSerializer,
@@ -31,7 +32,7 @@ class AirportViewSet(
     mixins.ListModelMixin,
     GenericViewSet,
 ):
-    queryset = Airport.objects.all()
+    queryset = Airport.objects.prefetch_related("source_routes", "destination_routes")
     serializer_class = AirportSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
@@ -41,7 +42,6 @@ class AirportViewSet(
 
         if closest_big_city:
             queryset = queryset.filter(closest_big_city__icontains=closest_big_city)
-
         return queryset
 
     def get_serializer_class(self):
@@ -69,7 +69,7 @@ class RouteViewSet(
     mixins.RetrieveModelMixin,
     GenericViewSet,
 ):
-    queryset = Route.objects.all()
+    queryset = Route.objects.select_related("source", "destination")
     serializer_class = RouteSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
@@ -136,6 +136,12 @@ class AirplaneViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class FlightPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = "page_size"
+    max_page_size = 10
+
+
 class FlightViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -144,12 +150,14 @@ class FlightViewSet(
 ):
     queryset = Flight.objects.all()
     serializer_class = FlightSerializer
+    pagination_class = FlightPagination
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
         queryset = self.queryset
         source_city = self.request.query_params.get("source_city")
         destination_city = self.request.query_params.get("destination_city")
+        prefetch_related_lookups = ["route__source", "route__destination", "airplane"]
         if source_city:
             queryset = queryset.filter(
                 route__source__closest_big_city__icontains=source_city
@@ -158,6 +166,9 @@ class FlightViewSet(
             queryset = queryset.filter(
                 route__destination__closest_big_city__icontains=destination_city
             )
+        queryset = queryset.select_related(*prefetch_related_lookups).prefetch_related(
+            Prefetch("tickets", queryset=Ticket.objects.select_related("order"))
+        )
         return queryset
 
     def get_serializer_class(self):
@@ -203,10 +214,15 @@ class OrderViewSet(
 
     def get_queryset(self):
         queryset = self.queryset.filter(user=self.request.user.id)
-        if self.action == "list":
-            queryset = queryset.prefetch_related(
-                "tickets__flight__airplane",
+        prefetch_related_lookups = [
+            Prefetch(
+                "tickets__flight",
+                queryset=Flight.objects.select_related(
+                    "route__source", "route__destination", "airplane"
+                ),
             )
+        ]
+        queryset = queryset.prefetch_related(*prefetch_related_lookups)
         return queryset
 
     def get_serializer_class(self):
