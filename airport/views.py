@@ -2,7 +2,8 @@ from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-
+from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from .models import Airport, Route, Crew, Order, Airplane, AirplaneType, Flight
 from .serializers import (
     AirportSerializer,
@@ -42,7 +43,15 @@ class AirportViewSet(viewsets.ModelViewSet):
 
         return AirportSerializer
 
-
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "city", type=str, description="Filter by closest big city (ex. ?city=Kyiv)"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
     serializer_class = RouteSerializer
@@ -63,6 +72,7 @@ class CrewViewSet(viewsets.ModelViewSet):
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
+
 
 class AirplaneViewSet(
     mixins.ListModelMixin,
@@ -123,10 +133,28 @@ class FlightViewSet(viewsets.ModelViewSet):
         if self.action == "retrieve":
             return FlightDetailSerializer
         return FlightSerializer
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "source_city",
+                type=str,
+                description="Filter by closest source city (ex. ?source_city=Kyiv)",
+            ),
+            OpenApiParameter(
+                "destination_city",
+                type=str,
+                description="Filter by closest destination city (ex. ?destination_city=Lviv)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 class OrderPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = "page_size"
     max_page_size = 10
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
