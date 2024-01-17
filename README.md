@@ -5,7 +5,7 @@ Welcome to the Airport Service API! Best solution for managing flight orders, ro
 ___
 
 ## Airport Service DB Structure
-![db_structure.png](media%2Freadme%2Fdb_structure.png)
+![db_structure.png](readme%2Fdb_structure.png)
 ## Features
 * JWT Authentication
 * Email-Based Authentication
@@ -114,7 +114,7 @@ Value: ``Bearer_space_*your_access_token*``
 
 Access token example. ``Bearer dmwkejeowk.ewkjeoqdowkjefowfejwefjwef.efhnwefowhefojw``
 
-![ModHeader.png](media%2Freadme%2FModHeader.png)
+![ModHeader.png](readme%2FModHeader.png)
 Go to ``127.0.0.1:8000/api/airport/`` and discover all hidden gems
 
 ## Contributing
