@@ -87,18 +87,33 @@ python manage.py runserver
 Docker should be installed.
 
 1. Use Docker Compose to build the API's Docker container:
-``` 
+```bash
 docker-compose build
 ```
 
 2. Run container:
-```
+```bash
 docker-compose up --build
 ```
+3. Optional: If you want to prepopulate your database with some data, use:
+```bash
+docker ps
+```
+```bash
+docker exec -it container_id bash
+```
 
-##### When API project use:
+```bash
+python manage.py loaddata db_airport_data.json
+```
 
-You need to generate access token. Do to: ``127.0.0.1:8000/api/user/token``
+
+## Navigation
+
+ - Access the API at http://127.0.0.1:8000/api/airport/
+
+ - For authentication tokens, visit http://127.0.0.1:8000/api/user/token/
+
 
 To use servie as admin enter following credentials:
 - login: ``admin@admin.com``
@@ -115,7 +130,15 @@ Value: ``Bearer_space_*your_access_token*``
 Access token example. ``Bearer dmwkejeowk.ewkjeoqdowkjefowfejwefjwef.efhnwefowhefojw``
 
 ![ModHeader.png](readme%2FModHeader.png)
-Go to ``127.0.0.1:8000/api/airport/`` and discover all hidden gems
+
+# Documentation
+### Swagger
+```http://127.0.0.1:8000/api/doc/swagger/```
+
+![swagger.png](readme%2Fswagger.png)
+
+---
+
 
 ## Contributing
 Feel free to contribute to these enhancements, and let's make our Airport Service API even better!
