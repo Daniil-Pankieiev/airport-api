@@ -15,7 +15,11 @@ class AirportSerializer(serializers.ModelSerializer):
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
-        fields = "__all__"
+        fields = (
+            "source",
+            "destination",
+            "distance"
+        )
 
 
 class RouteListSerializer(RouteSerializer):
@@ -53,13 +57,16 @@ class RouteDetailSerializer(RouteSerializer):
 class CrewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Crew
-        fields = "__all__"
+        fields = (
+            "first_name",
+            "last_name"
+        )
 
 
 class AirplaneTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirplaneType
-        fields = "__all__"
+        fields = ("name",)
 
 
 class AirplaneSerializer(serializers.ModelSerializer):
@@ -95,7 +102,13 @@ class AirplaneListSerializer(AirplaneSerializer):
 class FlightSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flight
-        fields = "__all__"
+        fields = (
+            "route",
+            "airplane",
+            "departure_time",
+            "arrival_time",
+            "crew"
+        )
 
 
 class FlightListSerializer(FlightSerializer):

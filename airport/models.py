@@ -1,9 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-import os
-import uuid
-from django.utils.text import slugify
-from airport_api.settings import AUTH_USER_MODEL
+from django.contrib.auth import get_user_model
+
+from airport.utils import airplane_image_file_path
 
 
 class Crew(models.Model):
@@ -15,7 +14,7 @@ class Crew(models.Model):
 
     @property
     def full_name(self):
-        return f"{self.first_name} {self.last_name}"
+        return self.__str__()
 
 
 class Airport(models.Model):
@@ -44,17 +43,10 @@ class Route(models.Model):
 
     @property
     def full_route(self):
-        return f"{self.source.closest_big_city} {self.destination.closest_big_city}"
+        return self.__str__()
 
     def __str__(self):
-        return f"{self.source.closest_big_city} - {self.destination.closest_big_city}"
-
-
-def airplane_image_file_path(instance, filename):
-    _, extension = os.path.splitext(filename)
-    filename = f"{slugify(instance.name)}-{uuid.uuid4()}{extension}"
-
-    return os.path.join("uploads/airplanes/", filename)
+        return self.source.closest_big_city + "-" + self.destination.closest_big_city
 
 
 class Airplane(models.Model):
@@ -66,15 +58,15 @@ class Airplane(models.Model):
         AirplaneType, on_delete=models.CASCADE, related_name="airplanes"
     )
 
+    class Meta:
+        ordering = ["name"]
+
     @property
     def capacity(self) -> int:
         return self.rows * self.seats_in_row
 
     def __str__(self):
         return self.name
-
-    class Meta:
-        ordering = ["name"]
 
 
 class Flight(models.Model):
@@ -86,17 +78,17 @@ class Flight(models.Model):
     departure_time = models.DateTimeField()
     crew = models.ManyToManyField(Crew, related_name="flights")
 
-    def __str__(self):
-        return str(self.route) + f"{self.departure_time} - {self.arrival_time}"
-
     class Meta:
         ordering = ["-departure_time"]
+
+    def __str__(self):
+        return str(self.route) + f"{self.departure_time} - {self.arrival_time}"
 
 
 class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(
-        AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders"
+        get_user_model(), on_delete=models.CASCADE, related_name="orders"
     )
 
     class Meta:
@@ -108,6 +100,10 @@ class Ticket(models.Model):
     seat = models.IntegerField()
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="tickets")
     flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name="tickets")
+
+    class Meta:
+        unique_together = ("flight", "row", "seat")
+        ordering = ["row", "seat"]
 
     @staticmethod
     def validate_seat(row, seat, flight, error_to_raise):
@@ -141,7 +137,3 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{str(self.flight)} seat: {self.seat}, row: {self.row}"
-
-    class Meta:
-        unique_together = ("flight", "row", "seat")
-        ordering = ["row", "seat"]

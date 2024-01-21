@@ -1,12 +1,12 @@
 from django.db.models import Prefetch
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from .models import Airport, Route, Crew, Order, Airplane, AirplaneType, Flight, Ticket
+from .pagination import FlightPagination, OrderPagination
 from .permissions import IsAdminOrIfAuthenticatedReadOnly
 from .serializers import (
     AirportSerializer,
@@ -136,12 +136,6 @@ class AirplaneViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class FlightPagination(PageNumberPagination):
-    page_size = 5
-    page_size_query_param = "page_size"
-    max_page_size = 10
-
-
 class FlightViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -194,12 +188,6 @@ class FlightViewSet(
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-
-
-class OrderPagination(PageNumberPagination):
-    page_size = 5
-    page_size_query_param = "page_size"
-    max_page_size = 10
 
 
 class OrderViewSet(
